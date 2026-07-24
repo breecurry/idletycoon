@@ -25,18 +25,18 @@ const ShopButton = ({ label, onPress, disabled }: ShopButtonProps) => {
 
 const styles = StyleSheet.create({
 button: {
-  backgroundColor: '#4ade80',
+  backgroundColor: COLORS.green,
   paddingVertical: 14,
   paddingHorizontal: 32,
   borderRadius: 12,
 },
 buttonText: {
-  color: '#1a1a2e',
+  color: COLORS.text,
   fontSize: 18,
   fontWeight: 'bold',
 },
 buttonDisabled: {
-  backgroundColor: '#555566',
+  backgroundColor: COLORS.disabled,
 },
 buttonPressed: {
   transform: [{ scale: 0.96 }],

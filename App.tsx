@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Alert, ScrollView } from 'react-native';
 import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { saveGame, loadGame } from './data/storage';
 import ShopButton from './components/ShopButton';
 import * as Haptics from 'expo-haptics';
 import { BUSINESSES, Business, costOf } from './data/businesses';
@@ -17,14 +17,14 @@ export default function App() {
 
   const [training, setTraining] = useState(0);
 
-  const kaching = useAudioPlayer(require('./assets/kaching.mp3'));
+  const kaching = useAudioPlayer(require('./assets/sounds/coins-dropped.wav'));
 
   const [owned, setOwned] = useState<{ [id: string]: number }>({ coffee: 0, foodtruck: 0 });
 
   const [isLoaded, setIsLoaded] = useState(false);
   let businessIncome = 0;
   for (const biz of BUSINESSES) {
-    businessIncome += owned[biz.id] * biz.income;
+    businessIncome += (owned[biz.id] || 0) * biz.income;
   }
   const managerIncome = 2 * (training + 1);
   const incomePerSecond = managers * managerIncome + businessIncome;
@@ -45,6 +45,8 @@ const hireManager = () => {
     setMoney(money - managerCost);
     setManagers(managers + 1);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    kaching.seekTo(0);
+    kaching.play();
   }
 };
 
@@ -53,14 +55,17 @@ const buyTraining = () => {
     setMoney(money - trainingCost);
     setTraining(training + 1);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    kaching.seekTo(0);
+    kaching.play();
   }
 };
 
+
 const buyBusiness = (biz: Business) => {
-  const cost = costOf(biz, owned[biz.id]);
+  const cost = costOf(biz, owned[biz.id] || 0);
   if (money >= cost) {
     setMoney(money - cost);
-    setOwned({ ...owned, [biz.id]: owned[biz.id] + 1 });
+    setOwned({ ...owned, [biz.id]: (owned[biz.id] || 0) + 1 });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     kaching.seekTo(0);
     kaching.play();
@@ -79,57 +84,42 @@ const shopItems = [
     disabled: money < trainingCost,
   },
   ...BUSINESSES.map(biz => ({
-    label: biz.name + " ($" + formatMoney(costOf(biz, owned[biz.id])) + ")",
+    label: biz.name + " ($" + formatMoney(costOf(biz, owned[biz.id] || 0)) + ")",
     onPress: () => buyBusiness(biz),
-    disabled: money < costOf(biz, owned[biz.id]),
+    disabled: money < costOf(biz, owned[biz.id] || 0),
   })),
-];
-
-
+]
 
 useEffect(() => {
   const load = async () => {
-    const saved = await
-    AsyncStorage.getItem('gameData');
-    if (saved !== null) {
-      const data = JSON.parse(saved);
-      const savedOwned = data.owned || { coffee: data.coffee || 0, foodtruck: data.foodtruck || 0 };
-      
+    const data = await loadGame();
+    if (data !== null) {
       let loadedMoney = data.money;
-
       if (data.lastSaved) {
         const secondsAway = Math.floor((Date.now() - data.lastSaved) / 1000);
-       
         let income = data.managers * 2 * (data.training + 1);
         for (const biz of BUSINESSES) {
-          income += (savedOwned[biz.id] || 0) * biz.income;
+          income += (data.owned[biz.id] || 0) * biz.income;
         }
         const offlineEarnings = secondsAway * income;
-
         if (offlineEarnings > 0) {
           loadedMoney = loadedMoney + offlineEarnings;
           Alert.alert("Welcome back!", "Your businesses earned $" + formatMoney(offlineEarnings) + " while you were away.");
         }
-        }
-        setMoney(loadedMoney);
-        setManagers(data.managers);
-        setTraining(data.training);
-        setOwned(savedOwned);
       }
-      setIsLoaded(true);
-    };
-    load();
-  }, []);
+      setMoney(loadedMoney);
+      setManagers(data.managers);
+      setTraining(data.training);
+      setOwned(data.owned);
+    }
+    setIsLoaded(true);
+  };
+  load();
+}, []);
 
 useEffect(() => {
   if (!isLoaded) return;
-  AsyncStorage.setItem('gameData', JSON.stringify({
-    money,
-    managers,
-    training,
-    owned,
-    lastSaved: Date.now(),
-  }));
+  saveGame({ money, managers, training, owned, lastSaved: Date.now() });
 }, [money, managers, training, owned, isLoaded]);
 
   return (
@@ -143,11 +133,11 @@ useEffect(() => {
       
       <Text style={styles.label}>Training Level: {training} (${formatMoney(managerIncome)}/manager)</Text>
       
-    {BUSINESSES.map(biz => (
-      <Text key={biz.id} style={styles.label}>
-        {biz.name}s: {owned[biz.id]} owned (+${formatMoney(owned[biz.id] * biz.income)}/sec)
-      </Text>
-    ))}
+{BUSINESSES.map(biz => (
+  <Text key={biz.id} style={styles.label}>
+    {biz.name}s: {owned[biz.id] || 0} owned (+${formatMoney((owned[biz.id] || 0) * biz.income)}/sec)
+  </Text>
+))}
       <Text style={styles.sectionHeader}>SHOP</Text>
       <ShopButton label="Work ($1)" onPress={() => setMoney(money + 1)} />
       {shopItems.map((item => (
@@ -169,14 +159,14 @@ useEffect(() => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'COLORS.background',
+    backgroundColor: COLORS.background,
   },
   header: {
   paddingTop: 70,
   paddingBottom: 20,
   alignItems: 'center',
   borderBottomWidth: 1,
-  borderBottomColor: 'COLORS.border',
+  borderBottomColor: COLORS.border,
 },
 scrollContent: {
   padding: 24,
@@ -185,18 +175,18 @@ scrollContent: {
 sectionHeader: {
   fontSize: 14,
   fontWeight: 'bold',
-  color: 'COLORS.green',
+  color: COLORS.green,
   marginTop: 16,
   letterSpacing: 2,
 },
   money: {
     fontSize:48,
     fontWeight: 'bold',
-    color: 'COLORS.green',
+    color: COLORS.green,
   },
   label: {
     fontSize: 18,
-    color: 'COLORS.gray',
+    color: COLORS.gray,
   },
 
 });
