@@ -1,161 +1,77 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Alert, ScrollView } from 'react-native';
-import { useState, useEffect } from 'react';
-import { saveGame, loadGame } from './data/storage';
-import { ECONOMY } from './data/economy';
-import ShopButton from './components/ShopButton';
-import * as Haptics from 'expo-haptics';
-import { BUSINESSES, Business, costOf } from './data/businesses';
-import { formatMoney } from './utils/format';
-import { COLORS } from './constants/colors';
-import { useAudioPlayer } from 'expo-audio';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import Header from './components/Header';
 import StatRow from './components/StatRow';
-
+import ShopButton from './components/ShopButton';
+import { BUSINESSES, costOf } from './data/businesses';
+import { ECONOMY } from './data/economy';
+import { formatMoney } from './utils/format';
+import { COLORS } from './constants/colors';
+import { useGame } from './hooks/useGame';
 
 export default function App() {
-  const [money, setMoney] = useState(0);
+  const game = useGame();
 
-  const [managers, setManagers] = useState(0);
-
-  const [training, setTraining] = useState(0);
-
-  const kaching = useAudioPlayer(require('./assets/sounds/coins-dropped.wav'));
-
-  const [owned, setOwned] = useState<{ [id: string]: number }>({ coffee: 0, foodtruck: 0 });
-
-  const [isLoaded, setIsLoaded] = useState(false);
-  let businessIncome = 0;
-  for (const biz of BUSINESSES) {
-    businessIncome += (owned[biz.id] || 0) * biz.income;
-  }
- const managerCost = Math.floor(ECONOMY.managerBaseCost * Math.pow(ECONOMY.managerCostGrowth, managers));
-  const trainingCost = Math.floor(ECONOMY.trainingBaseCost * Math.pow(ECONOMY.trainingCostGrowth, training));
-  const managerIncome = ECONOMY.managerBasePay * (training + 1);
-  const incomePerSecond = managers * managerIncome + businessIncome;
-
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMoney(current => current + incomePerSecond);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [incomePerSecond]);
-
-
-const hireManager = () => {
-  if (money >= managerCost  ) {
-    setMoney(money - managerCost);
-    setManagers(managers + 1);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    kaching.seekTo(0);
-    kaching.play();
-  }
-};
-
-const buyTraining = () => {
-  if (money >= trainingCost) {
-    setMoney(money - trainingCost);
-    setTraining(training + 1);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    kaching.seekTo(0);
-    kaching.play();
-  }
-};
-
-
-const buyBusiness = (biz: Business) => {
-  const cost = costOf(biz, owned[biz.id] || 0);
-  if (money >= cost) {
-    setMoney(money - cost);
-    setOwned({ ...owned, [biz.id]: (owned[biz.id] || 0) + 1 });
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    kaching.seekTo(0);
-    kaching.play();
-  }
-};
-
-const shopItems = [
-  {
-  label: "Hire Manager ($" + formatMoney(managerCost) + ")",
-  onPress: hireManager,
-  disabled: money < managerCost,
-},
-{
-  label: "Train Staff ($" + formatMoney(trainingCost) + ")",
-  onPress: buyTraining,
-  disabled: money < trainingCost,
-},
-  ...BUSINESSES.map(biz => ({
-    label: biz.name + " ($" + formatMoney(costOf(biz, owned[biz.id] || 0)) + ")",
-    onPress: () => buyBusiness(biz),
-    disabled: money < costOf(biz, owned[biz.id] || 0),
-  })),
-]
-
-useEffect(() => {
-  const load = async () => {
-    const data = await loadGame();
-    if (data !== null) {
-      let loadedMoney = data.money;
-      if (data.lastSaved) {
-        const secondsAway = Math.floor((Date.now() - data.lastSaved) / 1000);
-      let income = data.managers * ECONOMY.managerBasePay * (data.training + 1);
-        for (const biz of BUSINESSES) {
-          income += (data.owned[biz.id] || 0) * biz.income;
-        }
-        const offlineEarnings = secondsAway * income;
-        if (offlineEarnings > 0) {
-          loadedMoney = loadedMoney + offlineEarnings;
-          Alert.alert("Welcome back!", "Your businesses earned $" + formatMoney(offlineEarnings) + " while you were away.");
-        }
-      }
-      setMoney(loadedMoney);
-      setManagers(data.managers);
-      setTraining(data.training);
-      setOwned(data.owned);
-    }
-    setIsLoaded(true);
-  };
-  load();
-}, []);
-
-useEffect(() => {
-  if (!isLoaded) return;
-  saveGame({ money, managers, training, owned, lastSaved: Date.now() });
-}, [money, managers, training, owned, isLoaded]);
+  const shopItems = [
+    {
+      label: "Hire Manager ($" + formatMoney(game.managerCost) + ")",
+      onPress: game.hireManager,
+      disabled: game.money < game.managerCost,
+    },
+    {
+      label: "Train Staff ($" + formatMoney(game.trainingCost) + ")",
+      onPress: game.buyTraining,
+      disabled: game.money < game.trainingCost,
+    },
+    ...BUSINESSES.map(biz => ({
+      label: biz.name + " ($" + formatMoney(costOf(biz, game.owned[biz.id] || 0)) + ")",
+      onPress: () => game.buyBusiness(biz),
+      disabled: game.money < costOf(biz, game.owned[biz.id] || 0),
+    })),
+  ];
 
   return (
     <View style={styles.container}>
-    <Header money={money} incomePerSecond={incomePerSecond} />
+
+      <Header money={game.money} incomePerSecond={game.incomePerSecond} />
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
-      <Text style={styles.sectionHeader}>MY BUSINESSES</Text>
-      <StatRow label={"Managers: " + managers} detail={"+$" + formatMoney(managers * managerIncome) + "/sec"} />
-        <StatRow label={"Training Level: " + training} detail={"$" + formatMoney(managerIncome) + "/manager"} />
+
+        <Text style={styles.sectionHeader}>MY BUSINESSES</Text>
+        
+        <StatRow label={"Managers: " + game.managers} detail={"+$" + formatMoney(game.managers * game.managerIncome) + "/sec"} />
+       
+        <StatRow label={"Training Level: " + game.training} detail={"$" + formatMoney(game.managerIncome) + "/manager"} />
+        
         {BUSINESSES.map(biz => (
           <StatRow
             key={biz.id}
-            label={biz.name + "s: " + (owned[biz.id] || 0) + " owned"}
-            detail={"+$" + formatMoney((owned[biz.id] || 0) * biz.income) + "/sec"}
+            label={biz.name + "s: " + (game.owned[biz.id] || 0) + " owned"}
+            detail={"+$" + formatMoney((game.owned[biz.id] || 0) * biz.income) + "/sec"}
           />
         ))}
-      <Text style={styles.sectionHeader}>SHOP</Text>
-      <ShopButton label={"Work (+$" + ECONOMY.workPay + ")"} onPress={() => setMoney(money + ECONOMY.workPay)} />
-      {shopItems.map((item => (
-        <ShopButton
-          key={item.label}
-          label={item.label}
-          onPress={item.onPress}
-          disabled={item.disabled}
-        />
-      )))}
-       </ScrollView>
+       
+        <Text style={styles.sectionHeader}>SHOP</Text>
+        
+        <ShopButton label={"Work (+$" + ECONOMY.workPay + ")"} onPress={game.work} />
+        
+        {shopItems.map(item => (
+          <ShopButton
+            key={item.label}
+            label={item.label}
+            onPress={item.onPress}
+            disabled={item.disabled}
+          />
+        ))}
+      
+      </ScrollView>
+     
       <StatusBar style="auto" />
+    
     </View>
-   
-  );
+  
+);
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
