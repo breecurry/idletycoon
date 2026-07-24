@@ -9,6 +9,7 @@ import { BUSINESSES, Business, costOf } from './data/businesses';
 import { formatMoney } from './utils/format';
 import { COLORS } from './constants/colors';
 import { useAudioPlayer } from 'expo-audio';
+import Header from './components/Header';
 
 
 export default function App() {
@@ -125,9 +126,7 @@ useEffect(() => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-      <Text style={styles.money}>Money: ${formatMoney(money)}</Text>
-     </View>
+    <Header money={money} incomePerSecond={incomePerSecond} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
       <Text style={styles.sectionHeader}>MY BUSINESSES</Text>
       <Text style={styles.label}>Managers: {managers} (+${formatMoney(managers * managerIncome)}/sec) </Text>
@@ -156,38 +155,24 @@ useEffect(() => {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
-  paddingTop: 70,
-  paddingBottom: 20,
-  alignItems: 'center',
-  borderBottomWidth: 1,
-  borderBottomColor: COLORS.border,
-},
-scrollContent: {
-  padding: 24,
-  gap: 12,
-},
-sectionHeader: {
-  fontSize: 14,
-  fontWeight: 'bold',
-  color: COLORS.green,
-  marginTop: 16,
-  letterSpacing: 2,
-},
-  money: {
-    fontSize:48,
+  scrollContent: {
+    padding: 24,
+    gap: 12,
+  },
+  sectionHeader: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: COLORS.green,
+    marginTop: 16,
+    letterSpacing: 2,
   },
   label: {
     fontSize: 18,
     color: COLORS.gray,
   },
-
 });
