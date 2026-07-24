@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Alert, ScrollView } from 'react-native';
 import { useState, useEffect } from 'react';
 import { saveGame, loadGame } from './data/storage';
+import { ECONOMY } from './data/economy';
 import ShopButton from './components/ShopButton';
 import * as Haptics from 'expo-haptics';
 import { BUSINESSES, Business, costOf } from './data/businesses';
@@ -26,10 +27,10 @@ export default function App() {
   for (const biz of BUSINESSES) {
     businessIncome += (owned[biz.id] || 0) * biz.income;
   }
-  const managerIncome = 2 * (training + 1);
+ const managerCost = Math.floor(ECONOMY.managerBaseCost * Math.pow(ECONOMY.managerCostGrowth, managers));
+  const trainingCost = Math.floor(ECONOMY.trainingBaseCost * Math.pow(ECONOMY.trainingCostGrowth, training));
+  const managerIncome = ECONOMY.managerBasePay * (training + 1);
   const incomePerSecond = managers * managerIncome + businessIncome;
-  const managerCost = Math.floor(10 * Math.pow(1.5, managers));
-  const trainingCost = Math.floor(50 * Math.pow(2, training));
 
 
   useEffect(() => {
@@ -74,15 +75,15 @@ const buyBusiness = (biz: Business) => {
 
 const shopItems = [
   {
-    label: "Hire Manager ($" + formatMoney(managerCost) + ")",
-    onPress: hireManager,
-    disabled: money < managerCost, 
-  },
-  {
-    label: "Train Staff ($" + formatMoney(trainingCost) + ")",
-    onPress: buyTraining,
-    disabled: money < trainingCost,
-  },
+  label: "Hire Manager ($" + formatMoney(managerCost) + ")",
+  onPress: hireManager,
+  disabled: money < managerCost,
+},
+{
+  label: "Train Staff ($" + formatMoney(trainingCost) + ")",
+  onPress: buyTraining,
+  disabled: money < trainingCost,
+},
   ...BUSINESSES.map(biz => ({
     label: biz.name + " ($" + formatMoney(costOf(biz, owned[biz.id] || 0)) + ")",
     onPress: () => buyBusiness(biz),
@@ -97,7 +98,7 @@ useEffect(() => {
       let loadedMoney = data.money;
       if (data.lastSaved) {
         const secondsAway = Math.floor((Date.now() - data.lastSaved) / 1000);
-        let income = data.managers * 2 * (data.training + 1);
+      let income = data.managers * ECONOMY.managerBasePay * (data.training + 1);
         for (const biz of BUSINESSES) {
           income += (data.owned[biz.id] || 0) * biz.income;
         }
@@ -139,7 +140,7 @@ useEffect(() => {
   </Text>
 ))}
       <Text style={styles.sectionHeader}>SHOP</Text>
-      <ShopButton label="Work ($1)" onPress={() => setMoney(money + 1)} />
+      <ShopButton label={"Work (+$" + ECONOMY.workPay + ")"} onPress={() => setMoney(money + ECONOMY.workPay)} />
       {shopItems.map((item => (
         <ShopButton
           key={item.label}
