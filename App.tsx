@@ -35,13 +35,16 @@ export default function App() {
 
   const [training, setTraining] = useState(0);
 
+  const [coffee, setCoffee] = useState(0);
+
   const [isLoaded, setIsLoaded] = useState(false);
 
   const managerIncome = 2 * (training + 1);
-  const incomePerSecond = managers * managerIncome;
+  const coffeeIncome = coffee * 25;
+  const incomePerSecond = managers * managerIncome + coffeeIncome;
   const managerCost = Math.floor(10 * Math.pow(1.5, managers));
   const trainingCost = Math.floor(50 * Math.pow(2, training));
-  
+  const coffeeCost = Math.floor(500 * Math.pow(1.7, coffee));
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -65,6 +68,34 @@ const buyTraining = () => {
   }
 };
 
+const buyCoffee = () => {
+  if (money >= coffeeCost) {
+    setMoney(money - coffeeCost);
+    setCoffee(coffee + 1);
+  }
+};
+
+const shopItems = [
+  {
+    label: "Hire Manager ($" + formatMoney(managerCost) + ")",
+    onPress: hireManager,
+    disabled: money < managerCost, 
+  },
+  {
+    label: "Train Staff ($" + formatMoney(trainingCost) + ")",
+    onPress: buyTraining,
+    disabled: money < trainingCost,
+  },
+  {
+    label: "Coffee Machine ($" + formatMoney(coffeeCost) + ")",
+    onPress: buyCoffee,
+    disabled: money < coffeeCost,
+  },
+  
+];
+
+
+
 useEffect(() => {
   const load = async () => {
     const saved = await
@@ -76,7 +107,7 @@ useEffect(() => {
 
       if (data.lastSaved) {
         const secondsAway = Math.floor((Date.now() - data.lastSaved) / 1000);
-        const income = data.managers * 2 * (data.training + 1);
+        const income = data.managers * 2 * (data.training + 1) + (data.coffee || 0) * 25;
         const offlineEarnings = secondsAway * income;
 
         if (offlineEarnings > 0) {
@@ -87,6 +118,7 @@ useEffect(() => {
         setMoney(loadedMoney);
         setManagers(data.managers);
         setTraining(data.training);
+        setCoffee(data.coffee || 0);
       }
       setIsLoaded(true);
     };
@@ -112,12 +144,17 @@ useEffect(() => {
       
       <Text style={styles.label}>Training Level: {training} (${formatMoney(managerIncome)}/manager)</Text>
       
-      <ShopButton label={"Train Staff ($" + formatMoney(trainingCost) + ")"} onPress={buyTraining} disabled={money < trainingCost} />
+      <Text style={styles.label}>Coffee Machines: {coffee} (+${formatMoney(coffeeIncome)}/sec)</Text>
 
       <ShopButton label="Work ($1)" onPress={() => setMoney(money + 1)} />
-
-      <ShopButton label={"Hire Manager ($" + formatMoney(managerCost) + ")"} onPress={hireManager} disabled={money < managerCost} />
-
+      {shopItems.map((item => (
+        <ShopButton
+          key={item.label}
+          label={item.label}
+          onPress={item.onPress}
+          disabled={item.disabled}
+        />
+      )))}
       <StatusBar style="auto" />
     </View>
   );
