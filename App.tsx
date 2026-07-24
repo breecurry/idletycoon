@@ -4,26 +4,10 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ShopButton from './components/ShopButton';
 import * as Haptics from 'expo-haptics';
+import { BUSINESSES, Business, costOf } from './data/businesses';
+import { formatMoney } from './utils/format';
+import { COLORS } from './constants/colors';
 
-const formatMoney = (amount: number) => {
-  if (amount >= 1000000000) return (amount / 1000000000).toFixed(2) + "B";
-  if (amount >= 1000000) return (amount / 1000000).toFixed(2) + "M";
-  if (amount >= 1000) return (amount / 1000).toFixed(2) + "K";
-  return amount.toString();
-};
-
-type Business = {
-  id: string;
-  name: string;
-  baseCost: number;
-  growth: number;
-  income: number;
-};
-
-const BUSINESSES: Business[] = [
-  { id: 'coffee', name: 'Coffee Machine', baseCost: 500, growth: 1.7, income: 25 },
-  { id: 'foodtruck', name: 'Food Truck', baseCost: 5000, growth: 1.8, income: 150 },
-];
 
 export default function App() {
   const [money, setMoney] = useState(0);
@@ -43,8 +27,7 @@ export default function App() {
   const incomePerSecond = managers * managerIncome + businessIncome;
   const managerCost = Math.floor(10 * Math.pow(1.5, managers));
   const trainingCost = Math.floor(50 * Math.pow(2, training));
-  const costOf = (biz: Business) =>
-    Math.floor(biz.baseCost * Math.pow(biz.growth, owned[biz.id]));
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -71,7 +54,7 @@ const buyTraining = () => {
 };
 
 const buyBusiness = (biz: Business) => {
-  const cost = costOf(biz);
+  const cost = costOf(biz, owned[biz.id]);
   if (money >= cost) {
     setMoney(money - cost);
     setOwned({ ...owned, [biz.id]: owned[biz.id] + 1 });
@@ -91,9 +74,9 @@ const shopItems = [
     disabled: money < trainingCost,
   },
   ...BUSINESSES.map(biz => ({
-    label: biz.name + " ($" + formatMoney(costOf(biz)) + ")",
+    label: biz.name + " ($" + formatMoney(costOf(biz, owned[biz.id])) + ")",
     onPress: () => buyBusiness(biz),
-    disabled: money < costOf(biz),
+    disabled: money < costOf(biz, owned[biz.id]),
   })),
 ];
 
@@ -126,7 +109,7 @@ useEffect(() => {
         setMoney(loadedMoney);
         setManagers(data.managers);
         setTraining(data.training);
-        setOwned(data.owned || {});
+        setOwned(savedOwned);
       }
       setIsLoaded(true);
     };
@@ -181,14 +164,14 @@ useEffect(() => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: 'COLORS.background',
   },
   header: {
   paddingTop: 70,
   paddingBottom: 20,
   alignItems: 'center',
   borderBottomWidth: 1,
-  borderBottomColor: '#2a2a4e',
+  borderBottomColor: 'COLORS.border',
 },
 scrollContent: {
   padding: 24,
@@ -197,18 +180,18 @@ scrollContent: {
 sectionHeader: {
   fontSize: 14,
   fontWeight: 'bold',
-  color: '#4ade80',
+  color: 'COLORS.green',
   marginTop: 16,
   letterSpacing: 2,
 },
   money: {
     fontSize:48,
     fontWeight: 'bold',
-    color: '#4ade80',
+    color: 'COLORS.green',
   },
   label: {
     fontSize: 18,
-    color: '#aaaaaa',
+    color: 'COLORS.gray',
   },
 
 });
