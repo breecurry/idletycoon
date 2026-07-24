@@ -1,31 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Pressable, Alert, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, Alert, ScrollView } from 'react-native';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ShopButton from './components/ShopButton';
 
 const formatMoney = (amount: number) => {
   if (amount >= 1000000000) return (amount / 1000000000).toFixed(2) + "B";
   if (amount >= 1000000) return (amount / 1000000).toFixed(2) + "M";
   if (amount >= 1000) return (amount / 1000).toFixed(2) + "K";
   return amount.toString();
-};
-
-type ShopButtonProps = {
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-};
-
-const ShopButton = ({ label, onPress, disabled }: ShopButtonProps) => {
-  return (
-    <Pressable
-    style={[styles.button, disabled && styles.buttonDisabled]}
-    onPress={onPress}
-    disabled={disabled}
-  >
-    <Text style={styles.buttonText}>{label}</Text>
-  </Pressable>
-);
 };
 
 export default function App() {
@@ -127,7 +110,7 @@ useEffect(() => {
 
         if (offlineEarnings > 0) {
           loadedMoney = loadedMoney + offlineEarnings;
-          Alert.alert("Welcome back!", "Your businesses earned " + formatMoney(offlineEarnings) + " while you were away.");
+          Alert.alert("Welcome back!", "Your businesses earned $" + formatMoney(offlineEarnings) + " while you were away.");
         }
         }
         setMoney(loadedMoney);
@@ -156,7 +139,8 @@ useEffect(() => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-      <Text style={styles.money}>Money: ${formatMoney(money)}</Text> </View>
+      <Text style={styles.money}>Money: ${formatMoney(money)}</Text>
+     </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
       <Text style={styles.sectionHeader}>MY BUSINESSES</Text>
       <Text style={styles.label}>Managers: {managers} (+${formatMoney(managers * managerIncome)}/sec) </Text>
@@ -215,18 +199,5 @@ sectionHeader: {
     fontSize: 18,
     color: '#aaaaaa',
   },
-  button: {
-    backgroundColor: '#4ade80',
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-  },
-  buttonText: {
-    color: '#1a1a2e',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  buttonDisabled: {
-    backgroundColor: '#555566',
-  },
+
 });
