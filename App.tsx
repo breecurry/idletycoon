@@ -45,10 +45,10 @@ export default function App() {
         
         {game.visibleBusinesses.map(biz => (
           <StatRow
-            key={biz.id}
-            label={biz.name + "s: " + (game.owned[biz.id] || 0) + " owned"}
-            detail={"+$" + formatMoney((game.owned[biz.id] || 0) * biz.income) + "/sec"}
-          />
+          key={biz.id}
+          label={biz.name + "s: " +
+            (game.owned[biz.id] || 0 ) + " owned" + ((game.owned[biz.id] || 0) >= ECONOMY.milestoneCount ? " ★x" + ECONOMY.milestoneBonus : "")} detail={"+$" + formatMoney(game.incomeOf(biz)) + "/sec"}
+        />
         ))}
        
         <Text style={styles.sectionHeader}>SHOP</Text>

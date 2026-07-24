@@ -16,6 +16,11 @@ export const useGame = () => {
   const [bestMoney, setBestMoney] = useState(0);
   const kaching = useAudioPlayer(require('../assets/sounds/coins-dropped.wav'));
 
+const incomeOf = (biz: Business) => {
+  const count = owned[biz.id] || 0;
+  const bonus = count >= ECONOMY.milestoneCount ? ECONOMY.milestoneBonus : 1;
+  return count * biz.income * bonus;
+};
   let businessIncome = 0;
   for (const biz of BUSINESSES) {
     businessIncome += (owned[biz.id] || 0) * biz.income;
@@ -77,7 +82,11 @@ export const useGame = () => {
           const secondsAway = Math.floor((Date.now() - data.lastSaved) / 1000);
           let income = data.managers * ECONOMY.managerBasePay * (data.training + 1);
           for (const biz of BUSINESSES) {
-            income += (data.owned[biz.id] || 0) * biz.income;
+            const count = data.owned[biz.id] || 0;
+            const bonus = count >=
+            ECONOMY.milestoneCount ?
+            ECONOMY.milestoneBonus : 1;
+            income += count * biz.income * bonus;
           }
           const offlineEarnings = secondsAway * income;
           if (offlineEarnings > 0) {
@@ -109,6 +118,7 @@ export const useGame = () => {
     managerCost,
     trainingCost,
     incomePerSecond,
+    incomeOf,
     work,
     hireManager,
     buyTraining,

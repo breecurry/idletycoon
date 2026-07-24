@@ -6,4 +6,6 @@ export const ECONOMY = {
     trainingCostGrowth: 2,
     workPay: 1,
     unlockRatio: 0.5,
+    milestoneCount: 10,
+    milestoneBonus: 2,
 };
