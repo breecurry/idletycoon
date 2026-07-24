@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import Header from './components/Header';
 import StatRow from './components/StatRow';
 import ShopButton from './components/ShopButton';
-import { BUSINESSES, costOf } from './data/businesses';
+import { costOf } from './data/businesses';
 import { ECONOMY } from './data/economy';
 import { formatMoney } from './utils/format';
 import { COLORS } from './constants/colors';
@@ -23,7 +23,7 @@ export default function App() {
       onPress: game.buyTraining,
       disabled: game.money < game.trainingCost,
     },
-    ...BUSINESSES.map(biz => ({
+...game.visibleBusinesses.map(biz => ({
       label: biz.name + " ($" + formatMoney(costOf(biz, game.owned[biz.id] || 0)) + ")",
       onPress: () => game.buyBusiness(biz),
       disabled: game.money < costOf(biz, game.owned[biz.id] || 0),
@@ -43,7 +43,7 @@ export default function App() {
        
         <StatRow label={"Training Level: " + game.training} detail={"$" + formatMoney(game.managerIncome) + "/manager"} />
         
-        {BUSINESSES.map(biz => (
+        {game.visibleBusinesses.map(biz => (
           <StatRow
             key={biz.id}
             label={biz.name + "s: " + (game.owned[biz.id] || 0) + " owned"}

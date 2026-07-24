@@ -4,6 +4,7 @@ export type SaveData = {
   managers: number;
   training: number;
   owned: { [id: string]: number };
+  bestMoney: number;
   lastSaved: number;
 };
 export const saveGame = (data: SaveData) => {
@@ -17,7 +18,8 @@ export const loadGame = async () => {
     money: data.money || 0,
     managers: data.managers || 0,
     training: data.training || 0,
-    owned: data.owned || { coffee: data.coffee || 0, foodtruck: data.foodtruck || 0 },
+    owned: data.owned || { coffee: data.coffee || 0, foodtruck: data.foodtruck || 0 , flowershop: data['Flower Shop'] || 0, 'computerstore': data['Computer Store'] || 0 },
+    bestMoney: data.bestMoney || 0,
     lastSaved: data.lastSaved || 0,
   };
 };

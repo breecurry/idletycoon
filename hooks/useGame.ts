@@ -6,21 +6,32 @@ import { BUSINESSES, Business, costOf } from '../data/businesses';
 import { ECONOMY } from '../data/economy';
 import { saveGame, loadGame } from '../data/storage';
 import { formatMoney } from '../utils/format';
+
 export const useGame = () => {
   const [money, setMoney] = useState(0);
   const [managers, setManagers] = useState(0);
   const [training, setTraining] = useState(0);
   const [owned, setOwned] = useState<{ [id: string]: number }>({});
   const [isLoaded, setIsLoaded] = useState(false);
+  const [bestMoney, setBestMoney] = useState(0);
   const kaching = useAudioPlayer(require('../assets/sounds/coins-dropped.wav'));
+
   let businessIncome = 0;
   for (const biz of BUSINESSES) {
     businessIncome += (owned[biz.id] || 0) * biz.income;
   }
+
   const managerIncome = ECONOMY.managerBasePay * (training + 1);
   const incomePerSecond = managers * managerIncome + businessIncome;
   const managerCost = Math.floor(ECONOMY.managerBaseCost * Math.pow(ECONOMY.managerCostGrowth, managers));
   const trainingCost = Math.floor(ECONOMY.trainingBaseCost * Math.pow(ECONOMY.trainingCostGrowth, training));
+
+  useEffect(() => {
+    if (money > bestMoney) setBestMoney(money);
+  }, [money, bestMoney]);
+    
+    const visibleBusinesses = BUSINESSES.filter(biz => (owned[biz.id] || 0) > 0 || bestMoney >= biz.baseCost * ECONOMY.unlockRatio);
+
   const purchaseFeedback = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     kaching.seekTo(0);
@@ -78,6 +89,7 @@ export const useGame = () => {
         setManagers(data.managers);
         setTraining(data.training);
         setOwned(data.owned);
+        setBestMoney(data.bestMoney);
       }
       setIsLoaded(true);
     };
@@ -85,13 +97,14 @@ export const useGame = () => {
   }, []);
   useEffect(() => {
     if (!isLoaded) return;
-    saveGame({ money, managers, training, owned, lastSaved: Date.now() });
-  }, [money, managers, training, owned, isLoaded]);
+    saveGame({ money, managers, training, owned, bestMoney, lastSaved: Date.now() });
+  }, [money, managers, training, owned, bestMoney, isLoaded]);
   return {
     money,
     managers,
     training,
     owned,
+    bestMoney,
     managerIncome,
     managerCost,
     trainingCost,
@@ -100,5 +113,6 @@ export const useGame = () => {
     hireManager,
     buyTraining,
     buyBusiness,
+    visibleBusinesses,
   };
 };

@@ -5,4 +5,5 @@ export const ECONOMY = {
     trainingBaseCost: 50,
     trainingCostGrowth: 2,
     workPay: 1,
+    unlockRatio: 0.5,
 };
