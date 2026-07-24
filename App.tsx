@@ -12,6 +12,19 @@ const formatMoney = (amount: number) => {
   return amount.toString();
 };
 
+type Business = {
+  id: string;
+  name: string;
+  baseCost: number;
+  growth: number;
+  income: number;
+};
+
+const BUSINESSES: Business[] = [
+  { id: 'coffee', name: 'Coffee Machine', baseCost: 500, growth: 1.7, income: 25 },
+  { id: 'foodtruck', name: 'Food Truck', baseCost: 5000, growth: 1.8, income: 150 },
+];
+
 export default function App() {
   const [money, setMoney] = useState(0);
 
@@ -19,20 +32,19 @@ export default function App() {
 
   const [training, setTraining] = useState(0);
 
-  const [coffee, setCoffee] = useState(0);
-
-  const [foodtruck, setFoodtruck] = useState(0);
+  const [owned, setOwned] = useState<{ [id: string]: number }>({ coffee: 0, foodtruck: 0 });
 
   const [isLoaded, setIsLoaded] = useState(false);
-
+  let businessIncome = 0;
+  for (const biz of BUSINESSES) {
+    businessIncome += owned[biz.id] * biz.income;
+  }
   const managerIncome = 2 * (training + 1);
-  const coffeeIncome = coffee * 25;
-  const foodtruckIncome = foodtruck * 150;
-  const incomePerSecond = managers * managerIncome + coffeeIncome + foodtruckIncome;
+  const incomePerSecond = managers * managerIncome + businessIncome;
   const managerCost = Math.floor(10 * Math.pow(1.5, managers));
   const trainingCost = Math.floor(50 * Math.pow(2, training));
-  const coffeeCost = Math.floor(500 * Math.pow(1.7, coffee));
-  const foodtruckCost = Math.floor(5000 * Math.pow(1.8, foodtruck));
+  const costOf = (biz: Business) =>
+    Math.floor(biz.baseCost * Math.pow(biz.growth, owned[biz.id]));
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -58,18 +70,11 @@ const buyTraining = () => {
   }
 };
 
-const buyCoffee = () => {
-  if (money >= coffeeCost) {
-    setMoney(money - coffeeCost);
-    setCoffee(coffee + 1);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  }
-};
-
-const buyFoodtruck = () => {
-  if (money >= foodtruckCost) {
-    setMoney(money - foodtruckCost);
-    setFoodtruck(foodtruck + 1);
+const buyBusiness = (biz: Business) => {
+  const cost = costOf(biz);
+  if (money >= cost) {
+    setMoney(money - cost);
+    setOwned({ ...owned, [biz.id]: owned[biz.id] + 1 });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }
 };
@@ -85,16 +90,11 @@ const shopItems = [
     onPress: buyTraining,
     disabled: money < trainingCost,
   },
-  {
-    label: "Coffee Machine ($" + formatMoney(coffeeCost) + ")",
-    onPress: buyCoffee,
-    disabled: money < coffeeCost,
-  },
-  {
-    label: "Food Truck ($" + formatMoney(foodtruckCost) + ")",
-    onPress: buyFoodtruck,
-    disabled: money < foodtruckCost,
-  },
+  ...BUSINESSES.map(biz => ({
+    label: biz.name + " ($" + formatMoney(costOf(biz)) + ")",
+    onPress: () => buyBusiness(biz),
+    disabled: money < costOf(biz),
+  })),
 ];
 
 
@@ -105,12 +105,17 @@ useEffect(() => {
     AsyncStorage.getItem('gameData');
     if (saved !== null) {
       const data = JSON.parse(saved);
+      const savedOwned = data.owned || { coffee: data.coffee || 0, foodtruck: data.foodtruck || 0 };
       
       let loadedMoney = data.money;
 
       if (data.lastSaved) {
         const secondsAway = Math.floor((Date.now() - data.lastSaved) / 1000);
-        const income = data.managers * 2 * (data.training + 1) + (data.coffee || 0) * 25 + (data.foodtruck || 0) * 150;
+       
+        let income = data.managers * 2 * (data.training + 1);
+        for (const biz of BUSINESSES) {
+          income += (savedOwned[biz.id] || 0) * biz.income;
+        }
         const offlineEarnings = secondsAway * income;
 
         if (offlineEarnings > 0) {
@@ -121,8 +126,7 @@ useEffect(() => {
         setMoney(loadedMoney);
         setManagers(data.managers);
         setTraining(data.training);
-        setCoffee(data.coffee || 0);
-        setFoodtruck(data.foodtruck || 0);
+        setOwned(data.owned || {});
       }
       setIsLoaded(true);
     };
@@ -135,11 +139,10 @@ useEffect(() => {
     money,
     managers,
     training,
-    coffee,
-    foodtruck,
+    owned,
     lastSaved: Date.now(),
   }));
-}, [money, managers, training, coffee, foodtruck, isLoaded]);
+}, [money, managers, training, owned, isLoaded]);
 
   return (
     <View style={styles.container}>
@@ -152,8 +155,11 @@ useEffect(() => {
       
       <Text style={styles.label}>Training Level: {training} (${formatMoney(managerIncome)}/manager)</Text>
       
-      <Text style={styles.label}>Coffee Machines: {coffee} (+${formatMoney(coffeeIncome)}/sec)</Text>
-      <Text style={styles.label}>Food Trucks: {foodtruck} (+${formatMoney(foodtruckIncome)}/sec)</Text>
+    {BUSINESSES.map(biz => (
+      <Text key={biz.id} style={styles.label}>
+        {biz.name}s: {owned[biz.id]} owned (+${formatMoney(owned[biz.id] * biz.income)}/sec)
+      </Text>
+    ))}
       <Text style={styles.sectionHeader}>SHOP</Text>
       <ShopButton label="Work ($1)" onPress={() => setMoney(money + 1)} />
       {shopItems.map((item => (
