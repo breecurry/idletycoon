@@ -10,7 +10,11 @@ type ShopButtonProps = {
 const ShopButton = ({ label, onPress, disabled }: ShopButtonProps) => {
   return (
     <Pressable
-    style={[styles.button, disabled && styles.buttonDisabled]}
+    style={({ pressed }) => [
+      styles.button,
+      disabled && styles.buttonDisabled,
+      pressed && styles.buttonPressed,
+    ]}
     onPress={onPress}
     disabled={disabled}
   >
@@ -33,6 +37,10 @@ buttonText: {
 },
 buttonDisabled: {
   backgroundColor: '#555566',
+},
+buttonPressed: {
+  transform: [{ scale: 0.96 }],
+  opacity: 0.85,
 },
 });
 

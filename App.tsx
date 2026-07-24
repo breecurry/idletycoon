@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, Alert, ScrollView } from 'react-native';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ShopButton from './components/ShopButton';
+import * as Haptics from 'expo-haptics';
 
 const formatMoney = (amount: number) => {
   if (amount >= 1000000000) return (amount / 1000000000).toFixed(2) + "B";
@@ -45,6 +46,7 @@ const hireManager = () => {
   if (money >= managerCost  ) {
     setMoney(money - managerCost);
     setManagers(managers + 1);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }
 };
 
@@ -52,6 +54,7 @@ const buyTraining = () => {
   if (money >= trainingCost) {
     setMoney(money - trainingCost);
     setTraining(training + 1);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }
 };
 
@@ -59,6 +62,7 @@ const buyCoffee = () => {
   if (money >= coffeeCost) {
     setMoney(money - coffeeCost);
     setCoffee(coffee + 1);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }
 };
 
@@ -66,6 +70,7 @@ const buyFoodtruck = () => {
   if (money >= foodtruckCost) {
     setMoney(money - foodtruckCost);
     setFoodtruck(foodtruck + 1);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }
 };
 
