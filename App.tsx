@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { BUSINESSES, Business, costOf } from './data/businesses';
 import { formatMoney } from './utils/format';
 import { COLORS } from './constants/colors';
+import { useAudioPlayer } from 'expo-audio';
 
 
 export default function App() {
@@ -15,6 +16,8 @@ export default function App() {
   const [managers, setManagers] = useState(0);
 
   const [training, setTraining] = useState(0);
+
+  const kaching = useAudioPlayer(require('./assets/kaching.mp3'));
 
   const [owned, setOwned] = useState<{ [id: string]: number }>({ coffee: 0, foodtruck: 0 });
 
@@ -59,6 +62,8 @@ const buyBusiness = (biz: Business) => {
     setMoney(money - cost);
     setOwned({ ...owned, [biz.id]: owned[biz.id] + 1 });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    kaching.seekTo(0);
+    kaching.play();
   }
 };
 
