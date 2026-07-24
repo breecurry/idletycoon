@@ -10,6 +10,7 @@ import { formatMoney } from './utils/format';
 import { COLORS } from './constants/colors';
 import { useAudioPlayer } from 'expo-audio';
 import Header from './components/Header';
+import StatRow from './components/StatRow';
 
 
 export default function App() {
@@ -129,15 +130,15 @@ useEffect(() => {
     <Header money={money} incomePerSecond={incomePerSecond} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
       <Text style={styles.sectionHeader}>MY BUSINESSES</Text>
-      <Text style={styles.label}>Managers: {managers} (+${formatMoney(managers * managerIncome)}/sec) </Text>
-      
-      <Text style={styles.label}>Training Level: {training} (${formatMoney(managerIncome)}/manager)</Text>
-      
-{BUSINESSES.map(biz => (
-  <Text key={biz.id} style={styles.label}>
-    {biz.name}s: {owned[biz.id] || 0} owned (+${formatMoney((owned[biz.id] || 0) * biz.income)}/sec)
-  </Text>
-))}
+      <StatRow label={"Managers: " + managers} detail={"+$" + formatMoney(managers * managerIncome) + "/sec"} />
+        <StatRow label={"Training Level: " + training} detail={"$" + formatMoney(managerIncome) + "/manager"} />
+        {BUSINESSES.map(biz => (
+          <StatRow
+            key={biz.id}
+            label={biz.name + "s: " + (owned[biz.id] || 0) + " owned"}
+            detail={"+$" + formatMoney((owned[biz.id] || 0) * biz.income) + "/sec"}
+          />
+        ))}
       <Text style={styles.sectionHeader}>SHOP</Text>
       <ShopButton label={"Work (+$" + ECONOMY.workPay + ")"} onPress={() => setMoney(money + ECONOMY.workPay)} />
       {shopItems.map((item => (
@@ -170,9 +171,5 @@ const styles = StyleSheet.create({
     color: COLORS.green,
     marginTop: 16,
     letterSpacing: 2,
-  },
-  label: {
-    fontSize: 18,
-    color: COLORS.gray,
   },
 });
