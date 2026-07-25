@@ -82,30 +82,30 @@ const incomeOf = (biz: Business) => {
   };
   const hireManager = () => {
     if (money >= managerCost) {
-      setMoney(money - managerCost);
-      setManagers(managers + 1);
+      setMoney(current => current - managerCost);
+      setManagers(current => current + 1);
       purchaseFeedback();
     }
   };
   const buyTraining = () => {
     if (money >= trainingCost) {
-      setMoney(money - trainingCost);
-      setTraining(training + 1);
+      setMoney(current => current - trainingCost);
+      setTraining(current => current + 1);
       purchaseFeedback();
     }
   };
   const buyTapPower = () => {
     if (money >= tapPowerCost) {
-      setMoney(money - tapPowerCost);
-      setTapPower(tapPower + 1);
+      setMoney(current => current - tapPowerCost);
+      setTapPower(current => current + 1);
       purchaseFeedback();
     }
   };
   const buyBusiness = (biz: Business) => {
     const cost = costOf(biz, owned[biz.id] || 0);
     if (money >= cost) {
-      setMoney(money - cost);
-      setOwned({ ...owned, [biz.id]: (owned[biz.id] || 0) + 1 });
+      setMoney(current => current - cost);
+      setOwned(current => ({ ...current, [biz.id]: (current[biz.id] || 0) + 1}));
       purchaseFeedback();
     }
   };
@@ -121,14 +121,14 @@ const sellAndRebrand = () => {
         text: "Sell",
         style: "destructive",
         onPress: () => {
-          setBrandValue(brandValue + pendingBrandValue);
+          setBrandValue(current => current + pendingBrandValue);
           setMoney(0);
           setManagers(0);
           setTraining(0);
           setTapPower(0);
           setOwned({});
           setBestMoney(0);
-          setRebrands(rebrands + 1);
+          setRebrands(current => current + 1);
           setLifetimeRun(0);
           purchaseFeedback();
          
