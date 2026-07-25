@@ -5,9 +5,10 @@ type ShopButtonProps = {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  hint?: string;
 };
 
-const ShopButton = ({ label, onPress, disabled }: ShopButtonProps) => {
+const ShopButton = ({ label, onPress, disabled, hint }: ShopButtonProps) => {
   return (
     <Pressable
     style={({ pressed }) => [
@@ -19,6 +20,7 @@ const ShopButton = ({ label, onPress, disabled }: ShopButtonProps) => {
     disabled={disabled}
   >
     <Text style={styles.buttonText}>{label}</Text>
+    {disabled && hint && <Text style={styles.hint}>{hint}</Text>}
   </Pressable>
 );
 };
@@ -29,9 +31,10 @@ button: {
   paddingVertical: 14,
   paddingHorizontal: 32,
   borderRadius: 12,
+  alignItems: 'center',
 },
 buttonText: {
-  color: COLORS.text,
+  color: COLORS.background,
   fontSize: 18,
   fontWeight: 'bold',
 },
@@ -42,6 +45,12 @@ buttonPressed: {
   transform: [{ scale: 0.96 }],
   opacity: 0.85,
 },
+hint: {
+  color: COLORS.background,
+  fontSize: 13,
+  opacity: 0.7,
+  marginTop: 2,
+}
 });
 
 export default ShopButton;

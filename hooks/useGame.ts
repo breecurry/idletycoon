@@ -11,10 +11,12 @@ export const useGame = () => {
   const [money, setMoney] = useState(0);
   const [managers, setManagers] = useState(0);
   const [training, setTraining] = useState(0);
+  const [tapPower, setTapPower] = useState(0);
   const [owned, setOwned] = useState<{ [id: string]: number }>({});
   const [isLoaded, setIsLoaded] = useState(false);
   const [bestMoney, setBestMoney] = useState(0);
   const [brandValue, setBrandValue] = useState(0);
+  const [rebrands, setRebrands] = useState(0);
   const [lifetimeRun, setLifetimeRun] = useState (0);
   const [lifetimeTotal, setLifetimeTotal] = useState (0);
   const kaching = useAudioPlayer(require('../assets/sounds/coins-dropped.wav'));
@@ -31,18 +33,36 @@ const incomeOf = (biz: Business) => {
     businessIncome += incomeOf(biz);
   }
 
-  const managerIncome = ECONOMY.managerBasePay * (training + 1) * prestigeMultiplier;
+  const managerIncome = ECONOMY.managerBasePay * 
+  (training + 1) * prestigeMultiplier;
+  
   const incomePerSecond = managers * managerIncome + businessIncome;
-  const managerCost = Math.floor(ECONOMY.managerBaseCost * Math.pow(ECONOMY.managerCostGrowth, managers));
-  const trainingCost = Math.floor(ECONOMY.trainingBaseCost * Math.pow(ECONOMY.trainingCostGrowth, training));
-
-  const pendingBrandValue = Math.floor(Math.sqrt(lifetimeRun / ECONOMY.prestigeDivisor));
+  
+  const managerCost = Math.floor(ECONOMY.managerBaseCost * 
+    Math.pow(ECONOMY.managerCostGrowth, managers));
+  
+  const trainingCost = Math.floor(ECONOMY.trainingBaseCost * 
+    Math.pow(ECONOMY.trainingCostGrowth, training));
+  
+  const tapPowerCost =
+  Math.floor(ECONOMY.tapPowerBaseCost * 
+  Math.pow(ECONOMY.tapPowerCostGrowth, tapPower));
+  
+  const workValue = Math.max(ECONOMY.workPay, incomePerSecond * 
+    ECONOMY.workRatio) * (tapPower + 1);
+  
+  const pendingBrandValue = 
+  Math.floor(Math.sqrt(lifetimeRun / ECONOMY.prestigeDivisor));
 
   useEffect(() => {
     if (money > bestMoney) setBestMoney(money);
   }, [money, bestMoney]);
     
-    const visibleBusinesses = BUSINESSES.filter(biz => (owned[biz.id] || 0) > 0 || bestMoney >= biz.baseCost * ECONOMY.unlockRatio);
+    const visibleBusinesses = BUSINESSES.filter(biz => 
+      rebrands >= (biz.minRebrands || 0) &&
+      ((owned[biz.id] || 0) > 0 || bestMoney >= 
+      biz.baseCost * ECONOMY.unlockRatio)
+    );
 
   const purchaseFeedback = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -56,7 +76,7 @@ const incomeOf = (biz: Business) => {
     setLifetimeTotal(current => current + amount);
   };
   const work = () => {
-    earn(ECONOMY.workPay);
+    earn(workValue);
   };
   const hireManager = () => {
     if (money >= managerCost) {
@@ -69,6 +89,13 @@ const incomeOf = (biz: Business) => {
     if (money >= trainingCost) {
       setMoney(money - trainingCost);
       setTraining(training + 1);
+      purchaseFeedback();
+    }
+  };
+  const buyTapPower = () => {
+    if (money >= tapPowerCost) {
+      setMoney(money - tapPowerCost);
+      setTapPower(tapPower + 1);
       purchaseFeedback();
     }
   };
@@ -96,11 +123,13 @@ const sellAndRebrand = () => {
           setMoney(0);
           setManagers(0);
           setTraining(0);
+          setTapPower(0);
           setOwned({});
           setBestMoney(0);
+          setRebrands(rebrands + 1);
           setLifetimeRun(0);
           purchaseFeedback();
-        
+         
         },
       },
     ]
@@ -122,8 +151,12 @@ const sellAndRebrand = () => {
         let offlineEarnings = 0;
 
         if (data.lastSaved) {
-          const secondsAway = Math.floor((Date.now() - data.lastSaved) / 1000);
-          let income = data.managers * ECONOMY.managerBasePay * (data.training + 1);
+          const secondsAway = Math.floor((Date.now() - 
+          data.lastSaved) / 1000);
+          
+          let income = data.managers * ECONOMY.managerBasePay 
+          * (data.training + 1);
+          
           for (const biz of BUSINESSES) {
             const count = data.owned[biz.id] || 0;
             const bonus = count >=
@@ -131,21 +164,25 @@ const sellAndRebrand = () => {
             ECONOMY.milestoneBonus : 1;
             income += count * biz.income * bonus;
           }
+         
           income = income * (1 + data.brandValue * ECONOMY.prestigeBonus);
           offlineEarnings = secondsAway * income;
 
           if (offlineEarnings > 0) {
             loadedMoney = loadedMoney + offlineEarnings;
-            Alert.alert("Welcome back!", "Your businesses earned $" + formatMoney(offlineEarnings) + " while you were away.");
+            Alert.alert("Welcome back!", "Your businesses earned $" 
+              + formatMoney(offlineEarnings) + " while you were away.");
           }
         }
 
         setMoney(loadedMoney);
         setManagers(data.managers);
         setTraining(data.training);
+        setTapPower(data.tapPower);
         setOwned(data.owned);
         setBestMoney(data.bestMoney);
         setBrandValue(data.brandValue);
+        setRebrands(data.rebrands);
         setLifetimeRun(data.lifetimeRun + offlineEarnings);
         setLifetimeTotal(data.lifetimeTotal + offlineEarnings);
       }
@@ -157,8 +194,8 @@ const sellAndRebrand = () => {
 
   useEffect(() => {
     if (!isLoaded) return;
-    saveGame({ money, managers, training, owned, bestMoney, brandValue, lifetimeRun, lifetimeTotal, lastSaved: Date.now() });
-  }, [money, managers, training, owned, bestMoney, brandValue, lifetimeRun, lifetimeTotal, isLoaded]);
+    saveGame({ money, managers, training, tapPower, owned, bestMoney, brandValue, rebrands, lifetimeRun, lifetimeTotal, lastSaved: Date.now() });
+  }, [money, managers, training, tapPower, owned, bestMoney, brandValue, rebrands, lifetimeRun, lifetimeTotal, isLoaded]);
   return {
     money,
     managers,
@@ -166,13 +203,19 @@ const sellAndRebrand = () => {
     owned,
     bestMoney,
     brandValue,
+    rebrands,
     prestigeMultiplier,
     pendingBrandValue,
+    lifetimeRun,
     lifetimeTotal,
     managerIncome,
     managerCost,
     trainingCost,
+    tapPower,
+    tapPowerCost,
+    workValue,
     incomePerSecond,
+    buyTapPower,
     incomeOf,
     work,
     hireManager,

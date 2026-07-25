@@ -17,16 +17,26 @@ export default function App() {
       label: "Hire Manager ($" + formatMoney(game.managerCost) + ")",
       onPress: game.hireManager,
       disabled: game.money < game.managerCost,
+      hint: "Need $" + formatMoney(game.managerCost - game.money) + " more",
     },
     {
       label: "Train Staff ($" + formatMoney(game.trainingCost) + ")",
       onPress: game.buyTraining,
       disabled: game.money < game.trainingCost,
+      hint: "Need $" + formatMoney(game.trainingCost - game.money) + " more",
     },
-...game.visibleBusinesses.map(biz => ({
+    {
+      label: "Tap Power Lv." + (game.tapPower + 1) + "($"
+      + formatMoney(game.tapPowerCost) + ")",
+      onPress: game.buyTapPower,
+      disabled: game.money < game.tapPowerCost,
+      hint: "Need $" + formatMoney(game.tapPowerCost - game.money) + " more",
+    },
+  ...game.visibleBusinesses.map(biz => ({
       label: biz.name + " ($" + formatMoney(costOf(biz, game.owned[biz.id] || 0)) + ")",
       onPress: () => game.buyBusiness(biz),
       disabled: game.money < costOf(biz, game.owned[biz.id] || 0),
+      hint: "Need $" + formatMoney(costOf(biz, game.owned[biz.id] || 0) - game.money) + " more",
     })),
   ];
 
@@ -39,10 +49,15 @@ export default function App() {
 
         <Text style={styles.sectionHeader}>MY BUSINESSES</Text>
         
-        <StatRow label={"Managers: " + game.managers} detail={"+$" + formatMoney(game.managers * game.managerIncome) + "/sec"} />
+ <StatRow label={"Managers: " + game.managers} detail={"+$" 
+  + formatMoney(game.managers * game.managerIncome) + "/sec"} />
        
-        <StatRow label={"Training Level: " + game.training} detail={"$" + formatMoney(game.managerIncome) + "/manager"} />
+<StatRow label={"Training Level: " + game.training} detail={"$" 
+   + formatMoney(game.managerIncome) + "/manager"} />
         
+<StatRow label={"Tap Power: Lv." + (game.tapPower + 1)}
+detail={"$" + formatMoney(game.workValue) + "/tap"} />
+
         {
           game.brandValue > 0 && (
             <StatRow
@@ -50,6 +65,11 @@ export default function App() {
             detail={"+" + Math.round(game.brandValue * ECONOMY.prestigeBonus * 100) + "% income"}
           />
           )}
+
+{game.rebrands > 0 && (
+        <StatRow label={"Rebrands: " + game.rebrands}
+        detail={"unlocks new ventures"} />
+       )}
 
         {game.visibleBusinesses.map(biz => (
           <StatRow
@@ -61,7 +81,7 @@ export default function App() {
        
         <Text style={styles.sectionHeader}>SHOP</Text>
         
-        <ShopButton label={"Work (+$" + ECONOMY.workPay + ")"} onPress={game.work} />
+         <ShopButton label={"Work (+$" + formatMoney(game.workValue) + ")"} onPress={game.work} />
         
         {shopItems.map(item => (
           <ShopButton
@@ -69,6 +89,7 @@ export default function App() {
             label={item.label}
             onPress={item.onPress}
             disabled={item.disabled}
+            hint={item.hint}
           />
         ))}
       <Text style={styles.sectionHeader}>SELL & REBRAND </Text>
@@ -76,6 +97,9 @@ export default function App() {
       label={"Sell & Rebrand(+" + game.pendingBrandValue + " Brand Value)"}
       onPress={game.sellAndRebrand}
       disabled={game.pendingBrandValue < 1}
+      hint={"Earn $" +
+        formatMoney(ECONOMY.prestigeDivisor - game.lifetimeRun) + " more this run"
+      }
       />
       </ScrollView>
      

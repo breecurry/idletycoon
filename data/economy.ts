@@ -10,4 +10,7 @@ export const ECONOMY = {
     milestoneBonus: 2,
     prestigeBonus: 0.02,
     prestigeDivisor: 1000000,
+    workRatio: 0.05,
+    tapPowerBaseCost: 500,
+    tapPowerCostGrowth: 4,
 };

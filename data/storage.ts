@@ -8,6 +8,8 @@ export type SaveData = {
   brandValue: number;
   lifetimeRun: number;
   lifetimeTotal: number;
+  tapPower: number;
+  rebrands: number;
   lastSaved: number;
 };
 export const saveGame = (data: SaveData) => {
@@ -26,6 +28,8 @@ export const loadGame = async () => {
     brandValue: data.brandValue || 0,
     lifetimeRun: data.lifetimeRun || 0,
     lifetimeTotal: data.lifetimeTotal || 0,
+    tapPower: data.tapPower || 0,
+    rebrands: data.rebrands || 0,
     lastSaved: data.lastSaved || 0,
   };
 };
