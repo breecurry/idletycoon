@@ -64,6 +64,8 @@ const incomeOf = (biz: Business) => {
       biz.baseCost * ECONOMY.unlockRatio)
     );
 
+  const lockedBusinesses = BUSINESSES.filter(biz => rebrands < (biz.minRebrands || 0));
+
   const purchaseFeedback = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     kaching.seekTo(0);
@@ -215,6 +217,7 @@ const sellAndRebrand = () => {
     tapPowerCost,
     workValue,
     incomePerSecond,
+    lockedBusinesses,
     buyTapPower,
     incomeOf,
     work,

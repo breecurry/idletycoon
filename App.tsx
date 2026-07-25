@@ -38,6 +38,14 @@ export default function App() {
       disabled: game.money < costOf(biz, game.owned[biz.id] || 0),
       hint: "Need $" + formatMoney(costOf(biz, game.owned[biz.id] || 0) - game.money) + " more",
     })),
+
+    ...game.lockedBusinesses.map(biz => ({
+      label: "🔒 " + biz.name,
+      onPress: () => {},
+      disabled: true,
+      hint: "Must Rebrand " + (biz.minRebrands || 0)
+      + " times - " + game.rebrands + "/" + (biz.minRebrands || 0),
+    })),
   ];
 
   return (
