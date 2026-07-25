@@ -8,4 +8,6 @@ export const ECONOMY = {
     unlockRatio: 0.5,
     milestoneCount: 10,
     milestoneBonus: 2,
+    prestigeBonus: 0.02,
+    prestigeDivisor: 1000000,
 };

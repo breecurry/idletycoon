@@ -43,6 +43,14 @@ export default function App() {
        
         <StatRow label={"Training Level: " + game.training} detail={"$" + formatMoney(game.managerIncome) + "/manager"} />
         
+        {
+          game.brandValue > 0 && (
+            <StatRow
+            label={"Brand Value: " + game.brandValue}
+            detail={"+" + Math.round(game.brandValue * ECONOMY.prestigeBonus * 100) + "% income"}
+          />
+          )}
+
         {game.visibleBusinesses.map(biz => (
           <StatRow
           key={biz.id}
@@ -63,7 +71,12 @@ export default function App() {
             disabled={item.disabled}
           />
         ))}
-      
+      <Text style={styles.sectionHeader}>SELL & REBRAND </Text>
+      <ShopButton
+      label={"Sell & Rebrand(+" + game.pendingBrandValue + " Brand Value)"}
+      onPress={game.sellAndRebrand}
+      disabled={game.pendingBrandValue < 1}
+      />
       </ScrollView>
      
       <StatusBar style="auto" />

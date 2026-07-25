@@ -14,22 +14,29 @@ export const useGame = () => {
   const [owned, setOwned] = useState<{ [id: string]: number }>({});
   const [isLoaded, setIsLoaded] = useState(false);
   const [bestMoney, setBestMoney] = useState(0);
+  const [brandValue, setBrandValue] = useState(0);
+  const [lifetimeRun, setLifetimeRun] = useState (0);
+  const [lifetimeTotal, setLifetimeTotal] = useState (0);
   const kaching = useAudioPlayer(require('../assets/sounds/coins-dropped.wav'));
+
+  const prestigeMultiplier = 1 + brandValue * ECONOMY.prestigeBonus;
 
 const incomeOf = (biz: Business) => {
   const count = owned[biz.id] || 0;
   const bonus = count >= ECONOMY.milestoneCount ? ECONOMY.milestoneBonus : 1;
-  return count * biz.income * bonus;
+  return count * biz.income * bonus * prestigeMultiplier;
 };
   let businessIncome = 0;
   for (const biz of BUSINESSES) {
-    businessIncome += (owned[biz.id] || 0) * biz.income;
+    businessIncome += incomeOf(biz);
   }
 
-  const managerIncome = ECONOMY.managerBasePay * (training + 1);
+  const managerIncome = ECONOMY.managerBasePay * (training + 1) * prestigeMultiplier;
   const incomePerSecond = managers * managerIncome + businessIncome;
   const managerCost = Math.floor(ECONOMY.managerBaseCost * Math.pow(ECONOMY.managerCostGrowth, managers));
   const trainingCost = Math.floor(ECONOMY.trainingBaseCost * Math.pow(ECONOMY.trainingCostGrowth, training));
+
+  const pendingBrandValue = Math.floor(Math.sqrt(lifetimeRun / ECONOMY.prestigeDivisor));
 
   useEffect(() => {
     if (money > bestMoney) setBestMoney(money);
@@ -42,8 +49,14 @@ const incomeOf = (biz: Business) => {
     kaching.seekTo(0);
     kaching.play();
   };
+
+  const earn = (amount: number) => {
+    setMoney(current => current + amount);
+    setLifetimeRun(current => current + amount);
+    setLifetimeTotal(current => current + amount);
+  };
   const work = () => {
-    setMoney(money + ECONOMY.workPay);
+    earn(ECONOMY.workPay);
   };
   const hireManager = () => {
     if (money >= managerCost) {
@@ -67,17 +80,47 @@ const incomeOf = (biz: Business) => {
       purchaseFeedback();
     }
   };
+
+const sellAndRebrand = () => {
+  if (pendingBrandValue < 1) return;
+  Alert.alert(
+    "Sell & Rebrand?",
+    "Sell everything for " + pendingBrandValue + " Brand Value(+" + Math.round(pendingBrandValue * ECONOMY.prestigeBonus * 100 ) + "% income, forever). Money, Staff, and businesses reset.",
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sell",
+        style: "destructive",
+        onPress: () => {
+          setBrandValue(brandValue + pendingBrandValue);
+          setMoney(0);
+          setManagers(0);
+          setTraining(0);
+          setOwned({});
+          setBestMoney(0);
+          setLifetimeRun(0);
+          purchaseFeedback();
+        
+        },
+      },
+    ]
+  );
+};
+
   useEffect(() => {
     const interval = setInterval(() => {
-      setMoney(current => current + incomePerSecond);
+      earn(incomePerSecond);
     }, 1000);
     return () => clearInterval(interval);
   }, [incomePerSecond]);
+
   useEffect(() => {
     const load = async () => {
       const data = await loadGame();
       if (data !== null) {
         let loadedMoney = data.money;
+        let offlineEarnings = 0;
+
         if (data.lastSaved) {
           const secondsAway = Math.floor((Date.now() - data.lastSaved) / 1000);
           let income = data.managers * ECONOMY.managerBasePay * (data.training + 1);
@@ -88,32 +131,44 @@ const incomeOf = (biz: Business) => {
             ECONOMY.milestoneBonus : 1;
             income += count * biz.income * bonus;
           }
-          const offlineEarnings = secondsAway * income;
+          income = income * (1 + data.brandValue * ECONOMY.prestigeBonus);
+          offlineEarnings = secondsAway * income;
+
           if (offlineEarnings > 0) {
             loadedMoney = loadedMoney + offlineEarnings;
             Alert.alert("Welcome back!", "Your businesses earned $" + formatMoney(offlineEarnings) + " while you were away.");
           }
         }
+
         setMoney(loadedMoney);
         setManagers(data.managers);
         setTraining(data.training);
         setOwned(data.owned);
         setBestMoney(data.bestMoney);
+        setBrandValue(data.brandValue);
+        setLifetimeRun(data.lifetimeRun + offlineEarnings);
+        setLifetimeTotal(data.lifetimeTotal + offlineEarnings);
       }
       setIsLoaded(true);
     };
     load();
   }, []);
+
+
   useEffect(() => {
     if (!isLoaded) return;
-    saveGame({ money, managers, training, owned, bestMoney, lastSaved: Date.now() });
-  }, [money, managers, training, owned, bestMoney, isLoaded]);
+    saveGame({ money, managers, training, owned, bestMoney, brandValue, lifetimeRun, lifetimeTotal, lastSaved: Date.now() });
+  }, [money, managers, training, owned, bestMoney, brandValue, lifetimeRun, lifetimeTotal, isLoaded]);
   return {
     money,
     managers,
     training,
     owned,
     bestMoney,
+    brandValue,
+    prestigeMultiplier,
+    pendingBrandValue,
+    lifetimeTotal,
     managerIncome,
     managerCost,
     trainingCost,
@@ -123,6 +178,7 @@ const incomeOf = (biz: Business) => {
     hireManager,
     buyTraining,
     buyBusiness,
+    sellAndRebrand,
     visibleBusinesses,
   };
 };

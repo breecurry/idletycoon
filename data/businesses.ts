@@ -10,7 +10,7 @@ export type Business = {
 export const BUSINESSES: Business[] = [
   { id: 'coffee', name: 'Coffee Machine', baseCost: 500, growth: 1.7, income: 100 },
   { id: 'foodtruck', name: 'Food Truck', baseCost: 5000, growth: 1.8, income: 500 },
-  { id: 'flowershop', name: 'Flower Shop', baseCost: 10000, growth: 1.9, income: 3000 },
+  { id: 'flowershop', name: 'Flower Shop', baseCost: 60000, growth: 1.9, income: 3000 },
   { id: 'computerstore', name: 'Computer Store', baseCost: 100000, growth: 2.1, income: 10000 },
   { id: 'candyshop', name: 'Candy Shop', baseCost: 250000, growth: 2.2, income: 25000 },
   { id: 'boutique', name: 'Bella Boutique', baseCost: 750000, growth: 2.3, income: 100000 },
