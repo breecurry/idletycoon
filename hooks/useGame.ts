@@ -81,10 +81,14 @@ const incomeOf = (biz: Business) => {
   };
 
   const earn = (amount: number) => {
-    setMoney(current => current + amount);
-    setLifetimeRun(current => current + amount);
-    setLifetimeTotal(current => current + amount);
+    setGame(current => ({
+      ...current,
+      money: current.money + amount,
+      lifetimeRun: current.lifetimeRun + amount,
+      lifetimeTotal: current.lifetimeTotal + amount,
+    }));
   };
+
   const work = () => {
     earn(workValue);
   };
@@ -128,10 +132,17 @@ const incomeOf = (biz: Business) => {
     }
   };
   const buyBusiness = (biz: Business) => {
-    const cost = costOf(biz, owned[biz.id] || 0);
-    if (money >= cost) {
-      setMoney(current => current - cost);
-      setOwned(current => ({ ...current, [biz.id]: (current[biz.id] || 0) + 1}));
+    const cost = costOf(biz, game.owned[biz.id] || 0);
+    if (game.money >= cost) {
+      setGame(current => {
+        const freshCost = costOf(biz, current.owned[biz.id] || 0);
+        if (current.money < freshCost) return current;
+        return{
+          ...current,
+          money: current.money - freshCost,
+          owned: { ...current.owned, [biz.id]: (current.owned[biz.id] || 0) + 1 },
+        };
+      });
       purchaseFeedback();
     }
   };
@@ -147,15 +158,18 @@ const sellAndRebrand = () => {
         text: "Sell",
         style: "destructive",
         onPress: () => {
-          setBrandValue(current => current + pendingBrandValue);
-          setMoney(0);
-          setManagers(0);
-          setTraining(0);
-          setTapPower(0);
-          setOwned({});
-          setBestMoney(0);
-          setRebrands(current => current + 1);
-          setLifetimeRun(0);
+          setGame(current => ({
+            ...current,
+            brandValue: current.brandValue + pendingBrandValue,
+            rebrands: current.rebrands + 1,
+            money: 0,
+            managers: 0,
+            training: 0,
+            tapPower: 0,
+            owned: {},
+            bestMoney: 0,
+            lifetimeRun: 0,
+          }));
           purchaseFeedback();
          
         },
@@ -203,16 +217,18 @@ const sellAndRebrand = () => {
           }
         }
 
-        setMoney(loadedMoney);
-        setManagers(data.managers);
-        setTraining(data.training);
-        setTapPower(data.tapPower);
-        setOwned(data.owned);
-        setBestMoney(data.bestMoney);
-        setBrandValue(data.brandValue);
-        setRebrands(data.rebrands);
-        setLifetimeRun(data.lifetimeRun + offlineEarnings);
-        setLifetimeTotal(data.lifetimeTotal + offlineEarnings);
+        setGame({
+          money: loadedMoney,
+          managers: data.managers,
+          training: data.training,
+          tapPower: data.tapPower,
+          owned: data.owned,
+          bestMoney: data.bestMoney,
+          brandValue: data.brandValue,
+          rebrands: data.rebrands,
+          lifetimeRun: data.lifetimeRun + offlineEarnings,
+          lifetimeTotal: data.lifetimeTotal + offlineEarnings,
+        });
       }
       setIsLoaded(true);
     };
@@ -222,24 +238,26 @@ const sellAndRebrand = () => {
 
   useEffect(() => {
     if (!isLoaded) return;
-    saveGame({ money, managers, training, tapPower, owned, bestMoney, brandValue, rebrands, lifetimeRun, lifetimeTotal, lastSaved: Date.now() });
-  }, [money, managers, training, tapPower, owned, bestMoney, brandValue, rebrands, lifetimeRun, lifetimeTotal, isLoaded]);
+    saveGame({
+      ...game,
+      lastSaved: Date.now()
+    }); }, [game, isLoaded]);
   return {
-    money,
-    managers,
-    training,
-    owned,
-    bestMoney,
-    brandValue,
-    rebrands,
+    money: game.money,
+    managers: game.managers,
+    training: game.training,
+    owned: game.owned,
+    bestMoney: game.bestMoney,
+    brandValue: game.brandValue,
+    rebrands: game.rebrands,
     prestigeMultiplier,
     pendingBrandValue,
-    lifetimeRun,
-    lifetimeTotal,
+    lifetimeRun: game.lifetimeRun,
+    lifetimeTotal: game.lifetimeTotal,
     managerIncome,
     managerCost,
     trainingCost,
-    tapPower,
+    tapPower: game.tapPower,
     tapPowerCost,
     workValue,
     incomePerSecond,
