@@ -16,6 +16,9 @@ export const BUSINESSES: Business[] = [
   { id: 'candyshop', name: 'Candy Shop', baseCost: 250000, growth: 2.2, income: 25000, minRebrands: 2 },
   { id: 'boutique', name: 'Bella Boutique', baseCost: 750000, growth: 2.3, income: 100000, minRebrands: 5 },
   { id: 'petstore', name: 'Petsupply USA', baseCost: 1250000, growth: 2.4, income: 250000, minRebrands: 15},
+  { id: 'newspaper', name: 'Curry Post', baseCost: 12500000, growth: 2.5, income: 1000000, minRebrands: 20},
+  { id: 'tvstation', name: 'PWR TV', baseCost: 500000000, growth: 1.5, income: 107500000, minRebrands: 22},
+  { id: 'hairsalon', name: 'Big Hair Salon', baseCost: 1000000000, growth: 1.75, income: 50000000, minRebrands: 23},
   { id: 'skyscraper', name: 'Skyscraper', baseCost: 1000000000000, growth: 2.5, income: 50000000, minRebrands: 25 },
 ];
 
