@@ -4,27 +4,30 @@ import * as Haptics from 'expo-haptics';
 import { useAudioPlayer } from 'expo-audio';
 import { BUSINESSES, Business, costOf } from '../data/businesses';
 import { ECONOMY } from '../data/economy';
-import { saveGame, loadGame } from '../data/storage';
+import { saveGame, loadGame, SaveData } from '../data/storage';
 import { formatMoney } from '../utils/format';
 
+type GameState = Omit<SaveData, 'lastSaved'>;
 export const useGame = () => {
-  const [money, setMoney] = useState(0);
-  const [managers, setManagers] = useState(0);
-  const [training, setTraining] = useState(0);
-  const [tapPower, setTapPower] = useState(0);
-  const [owned, setOwned] = useState<{ [id: string]: number }>({});
   const [isLoaded, setIsLoaded] = useState(false);
-  const [bestMoney, setBestMoney] = useState(0);
-  const [brandValue, setBrandValue] = useState(0);
-  const [rebrands, setRebrands] = useState(0);
-  const [lifetimeRun, setLifetimeRun] = useState (0);
-  const [lifetimeTotal, setLifetimeTotal] = useState (0);
+  const [game, setGame] = useState<GameState>({
+    money: 0,
+    managers: 0,
+    training: 0,
+    tapPower: 0,
+    owned: {},
+    bestMoney: 0,
+    brandValue: 0,
+    rebrands: 0,
+    lifetimeRun: 0,
+    lifetimeTotal: 0,
+  });
   const kaching = useAudioPlayer(require('../assets/sounds/coins-dropped.wav'));
 
-  const prestigeMultiplier = 1 + brandValue * ECONOMY.prestigeBonus;
+  const prestigeMultiplier = 1 + game.brandValue * ECONOMY.prestigeBonus;
 
 const incomeOf = (biz: Business) => {
-  const count = owned[biz.id] || 0;
+  const count = game.owned[biz.id] || 0;
   const bonus = count >= ECONOMY.milestoneCount ? ECONOMY.milestoneBonus : 1;
   return count * biz.income * bonus * prestigeMultiplier;
 };
@@ -34,37 +37,42 @@ const incomeOf = (biz: Business) => {
   }
 
   const managerIncome = ECONOMY.managerBasePay * 
-  (training + 1) * prestigeMultiplier;
+  (game.training + 1) * prestigeMultiplier;
   
-  const incomePerSecond = managers * managerIncome + businessIncome;
+  const incomePerSecond = game.managers * managerIncome + businessIncome;
   
   const managerCost = Math.floor(ECONOMY.managerBaseCost * 
-    Math.pow(ECONOMY.managerCostGrowth, managers));
+    Math.pow(ECONOMY.managerCostGrowth, game.managers));
   
   const trainingCost = Math.floor(ECONOMY.trainingBaseCost * 
-    Math.pow(ECONOMY.trainingCostGrowth, training));
+    Math.pow(ECONOMY.trainingCostGrowth, game.training));
   
   const tapPowerCost =
   Math.floor(ECONOMY.tapPowerBaseCost * 
-  Math.pow(ECONOMY.tapPowerCostGrowth, tapPower));
+  Math.pow(ECONOMY.tapPowerCostGrowth, game.tapPower));
   
   const workValue = Math.max(ECONOMY.workPay, incomePerSecond * 
-    ECONOMY.workRatio) * (tapPower + 1);
+    ECONOMY.workRatio) * (game.tapPower + 1);
   
   const pendingBrandValue = 
-  Math.floor(Math.sqrt(lifetimeRun / ECONOMY.prestigeDivisor));
+  Math.floor(Math.sqrt(game.lifetimeRun / ECONOMY.prestigeDivisor));
 
   useEffect(() => {
-    if (money > bestMoney) setBestMoney(money);
-  }, [money, bestMoney]);
+    setGame(current => {
+      if (current.money > current.bestMoney) {
+        return {...current, bestMoney: current.money};
+      }
+      return current;
+    });
+  }, [game.money]);
     
     const visibleBusinesses = BUSINESSES.filter(biz => 
-      rebrands >= (biz.minRebrands || 0) &&
-      ((owned[biz.id] || 0) > 0 || bestMoney >= 
+      game.rebrands >= (biz.minRebrands || 0) &&
+      ((game.owned[biz.id] || 0) > 0 || game.bestMoney >= 
       biz.baseCost * ECONOMY.unlockRatio)
     );
 
-  const lockedBusinesses = BUSINESSES.filter(biz => rebrands < (biz.minRebrands || 0));
+  const lockedBusinesses = BUSINESSES.filter(biz => game.rebrands < (biz.minRebrands || 0));
 
   const purchaseFeedback = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -81,24 +89,42 @@ const incomeOf = (biz: Business) => {
     earn(workValue);
   };
   const hireManager = () => {
-    if (money >= managerCost) {
-      setMoney(current => current - managerCost);
-      setManagers(current => current + 1);
-      purchaseFeedback();
+    if (game.money >= managerCost) {
+      setGame(current => {
+        if (current.money < managerCost) return current;
+        return {
+          ...current,
+          money: current.money - managerCost,
+          managers: current.managers + 1,
+        };
+      });
+              purchaseFeedback();
     }
-  };
+    };
   const buyTraining = () => {
-    if (money >= trainingCost) {
-      setMoney(current => current - trainingCost);
-      setTraining(current => current + 1);
-      purchaseFeedback();
+    if (game.money >= trainingCost) {
+      setGame(current => {
+        if (current.money < trainingCost) return current;
+        return {
+          ...current,
+          money: current.money - trainingCost,
+          training: current.training + 1,
+        };
+      });
+              purchaseFeedback();
     }
   };
   const buyTapPower = () => {
-    if (money >= tapPowerCost) {
-      setMoney(current => current - tapPowerCost);
-      setTapPower(current => current + 1);
-      purchaseFeedback();
+    if (game.money >= tapPowerCost) {
+      setGame(current => {
+        if (current.money < tapPowerCost) return current;
+        return {
+          ...current,
+          money: current.money - tapPowerCost,
+          tapPower: current.tapPower + 1,
+        };
+      });
+              purchaseFeedback();
     }
   };
   const buyBusiness = (biz: Business) => {
